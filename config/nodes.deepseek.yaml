@@ -1,0 +1,17 @@
+# Two independently owned root sessions on verified official model routes.
+# Requires DEEPSEEK_API_KEY in the parent process environment; contains no key.
+nodes:
+  - id: deepseek
+    provider: deepseek-official
+    model: deepseek-flash
+    sessionId: dmn-deepseek-primary
+    personaRef: templates/personas/deepseek-node.md
+    memoryNamespace: memory:deepseek
+    allowedTools: [model_send_message, model_get_thread, model_list_peers]
+  - id: reviewer
+    provider: deepseek-official
+    model: deepseek-v4-pro
+    sessionId: dmn-reviewer-primary
+    personaRef: templates/personas/reviewer-node.md
+    memoryNamespace: memory:reviewer
+    allowedTools: [model_send_message, model_get_thread, model_list_peers]

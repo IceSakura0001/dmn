@@ -1,0 +1,19 @@
+# Merge this insert into the Electron-managed desktop cordis.patch.yml.
+# Replace workspace and Node paths. Credentials remain environment references.
+- insert:
+    - id: mcp-dmn
+      name: '@deepseek-ai/dsh-mcp-client'
+      config:
+        serverName: dmn
+        transport: stdio
+        command: 'C:/path/to/node.exe'
+        args:
+          - --import
+          - tsx
+          - 'C:/path/to/dmn/src/mcp-stdio.ts'
+          - 'C:/path/to/dmn'
+        cwd: 'C:/path/to/dmn'
+        env:
+          DEEPSEEK_API_KEY: !!js process.env.DEEPSEEK_API_KEY
+        toolCallTimeoutMs: 60000
+        failOnStartupError: false

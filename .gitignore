@@ -1,0 +1,24 @@
+node_modules/
+.dmn/
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+*.sqlite.runtime/
+*.sqlite.clients/
+*.sqlite.maintenance.lock
+*.sqlite.restore-incomplete
+*.sqlite.restore-partial-*/
+.env
+.env.*
+config/*.local.yaml
+coverage/
+*.native.owner
+*.native.endpoint
+
+# 验收证据原件仅维护者本地留存，不随仓库分发（见 docs/EVIDENCE.md）
+docs/evidence/
+*.zip
+*.tgz
+*.bak
+*.previous
+*.restore-*

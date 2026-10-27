@@ -1,0 +1,27 @@
+{
+  "startNode": "deepseek",
+  "topic": {
+    "title": "有界可靠消息讨论",
+    "initialPrompt": "与另一节点讨论未知模型结果应如何对账。每轮给出一条简洁意见和一个问题，继续交流直到宿主停止。不要创造话题或要求扩大预算。",
+    "participants": ["deepseek", "reviewer"],
+    "maxModelTurns": 6,
+    "maxTurnsPerNode": 3,
+    "durationMinutes": 5
+  },
+  "limits": {
+    "maxInputTokens": 196608,
+    "maxOutputTokens": 4608,
+    "maxEstimatedCost": 1.5,
+    "inputTokensPerTurn": 32768,
+    "outputTokensPerTurn": 768,
+    "estimatedCostPerTurn": 0.25,
+    "turnTimeoutMs": 60000,
+    "maxAttempts": 3,
+    "backoffSeconds": [5, 30, 180],
+    "maxConsecutiveMessagesPerNode": 2,
+    "nodeLimits": {
+      "deepseek": { "maxTurns": 3, "maxInputTokens": 98304, "maxOutputTokens": 2304, "maxEstimatedCost": 0.75 },
+      "reviewer": { "maxTurns": 3, "maxInputTokens": 98304, "maxOutputTokens": 2304, "maxEstimatedCost": 0.75 }
+    }
+  }
+}

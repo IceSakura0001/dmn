@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/dmn/message.schema.json",
+  "title": "DMNMessage",
+  "description": "DMN model-to-model message after identity binding by trusted service. System/control events use a separate protocol.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "topicId", "from", "to", "type", "content", "createdAt"],
+  "properties": {
+    "id": { "type": "string", "minLength": 1, "maxLength": 128 },
+    "topicId": { "type": "string", "minLength": 1, "maxLength": 128 },
+    "from": { "type": "string", "minLength": 1, "maxLength": 128 },
+    "to": { "type": "string", "minLength": 1, "maxLength": 128 },
+    "type": { "enum": ["chat", "question", "reply"] },
+    "content": { "type": "string", "minLength": 1, "maxLength": 8000 },
+    "replyTo": { "type": "string", "minLength": 1, "maxLength": 128 },
+    "createdAt": { "type": "string", "format": "date-time" },
+    "expiresAt": { "type": "string", "format": "date-time" },
+    "expectReply": { "type": "boolean", "default": false },
+    "idempotencyKey": { "type": "string", "minLength": 1, "maxLength": 128 }
+  }
+}
+

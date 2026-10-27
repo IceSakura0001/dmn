@@ -1,0 +1,29 @@
+# DMN 自定义策略示例；由服务端 Policy Engine 强制执行。
+topicDefaults:
+  mode: semi-autonomous
+  maxModelTurns: 12
+  maxTurnsPerNode: 5
+  maxDurationMinutes: 15
+  maxConsecutiveMessagesPerNode: 2
+  maxConcurrentTurnsPerNode: 1
+  autoStartNewTopics: false
+  allowInviteUnlistedNodes: false
+  maxMessageChars: 8000
+  # 以下需要显式配置，缺失时禁止无上限自动运行。
+  maxInputTokens: REPLACE_WITH_INTEGER
+  maxOutputTokens: REPLACE_WITH_INTEGER
+  maxEstimatedCost: REPLACE_WITH_NUMBER
+delivery:
+  leaseSeconds: 120
+  maxAttempts: 3
+  backoffSeconds: [5, 30, 180]
+  deadLetterAfterMaxAttempts: true
+memory:
+  maxRetrievedPerTurn: 8
+  minImportanceToPersist: 0.55
+  identityAutoEdit: false
+security:
+  treatPeerMessagesAsUntrusted: true
+  serverSideSenderBinding: true
+  allowCrossNodePrivateMemoryAccess: false
+

@@ -1,0 +1,42 @@
+const $=id=>document.getElementById(id);
+const labels={sleeping:'等待',queued:'排队',running:'运行',leased:'正在投递',delivered:'已投递，待完成',handled:'已处理',dead_letter:'死信 / 处理失败',cancelled:'已取消',cooling:'异常隔离 / 冷却',active:'活动',waiting:'等待输入',paused:'暂停',closed:'已结束',replied:'已回复',silent:'静默',decline:'拒绝',failed:'失败 / 取消',unknown:'结果未知，待对账',retry:'等待重试',suppressed:'旧轮次效果已隔离',completed:'已完成'};
+let token='',selected='',nodes=[],busy=false;
+let pageCursor=null,nextCursor=null,pageBack=[],pageTopic='',refreshVersion=0;
+function resetPages(){pageCursor=null;nextCursor=null;pageBack=[];}
+function pageButtons(){$('older').disabled=busy||!nextCursor;$('newer').disabled=busy||!pageBack.length;}
+let savedKeys=[];try{savedKeys=JSON.parse(sessionStorage.getItem('dmn-pending')||'[]');}catch{}
+const pendingKeys=new Map(savedKeys);
+function saveKeys(){sessionStorage.setItem('dmn-pending',JSON.stringify([...pendingKeys]));}
+async function keyFor(scope,body){const hash=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(scope+JSON.stringify(body)));const fingerprint=Array.from(new Uint8Array(hash),b=>b.toString(16).padStart(2,'0')).join('');if(!pendingKeys.has(fingerprint)){pendingKeys.set(fingerprint,crypto.randomUUID());saveKeys();}return [fingerprint,pendingKeys.get(fingerprint)];}
+async function api(path,body){const response=await fetch('/api/'+path,body?{method:'POST',headers:{'content-type':'application/json','x-dmn-token':token},body:JSON.stringify(body)}:{});const data=await response.json();if(!response.ok){const error=Error(data.error||'请求失败');error.rejected=response.status>=400&&response.status<500;throw error;}return data;}
+function option(value,text){const el=document.createElement('option');el.value=value;el.textContent=text;return el;}
+async function refresh(){
+ const version=++refreshVersion;
+ try{const state=await api('state');if(version!==refreshVersion)return;token=state.csrfToken;nodes=state.nodes;$('connection').textContent='已连接';
+ $('nodes').replaceChildren(...nodes.map(n=>{const card=document.createElement('article');card.className='node';const title=document.createElement('strong');title.textContent=n.id;const model=document.createElement('p');model.textContent=n.model;const role=document.createElement('p');role.textContent=({deepseek:'讨论与方案建议',reviewer:'反例与约束评审'})[n.id]||'独立模型节点';const status=document.createElement('span');status.textContent=labels[n.state]||n.state;card.append(title,model,role,status);return card;}));
+ for(const id of ['startNode','recipient']){const old=$(id).value;$(id).replaceChildren(...nodes.map(n=>option(n.id,n.id+' · '+n.model)));if(nodes.some(n=>n.id===old))$(id).value=old;}
+ if(selected&&!state.topics.some(t=>t.id===selected)){selected='';localStorage.setItem('dmn-topic','');}
+ $('topics').replaceChildren(option('','选择话题'),...state.topics.map(t=>option(t.id,t.title+' · '+(t.mode==='direct'?'定向聊天':'节点讨论'))));$('topics').value=selected;
+ if(selected){if(pageTopic!==selected){resetPages();pageTopic=selected;}const query=new URLSearchParams({topicId:selected,order:'desc',limit:'50'});if(pageCursor)query.set('cursor',pageCursor);const view=await api('topic?'+query);if(version!==refreshVersion)return;nextCursor=view.messages.page.nextCursor;$('pageInfo').textContent=pageBack.length?'历史快照 · 第 '+(pageBack.length+1)+' 页':'最新记录';pageButtons();const metrics=await api('metrics?topicId='+encodeURIComponent(selected));if(version!==refreshVersion)return;$('metrics').textContent=`重试尝试 ${metrics.retryAttempts} · 最长排队 ${metrics.oldestQueuedAgeMs===null?'无':Math.round(metrics.oldestQueuedAgeMs/1000)+' 秒'} · 已报告实际输入/输出 Token ${metrics.tokens.actualInput}/${metrics.tokens.actualOutput}（缺用量 ${metrics.tokens.withoutUsage} 次）· 实际账单未提供`; const t=view.topic;$('budget').textContent=`已预留 ${t.usedTurns} / ${t.maxTurns} 次`;
+ const quota=t.nodes.map(n=>`${n.node_id}：${n.used_turns}/${n.max_turns} 次，输入 ${n.reserved_input_tokens}/${n.max_input_tokens}、输出 ${n.reserved_output_tokens}/${n.max_output_tokens} Token，估算 $${n.reserved_cost}/${n.max_cost}`).join('；');
+ $('topicState').textContent=`${labels[t.state]||t.state} · ${t.pauseReason||''} · 截止 ${new Date(t.deadlineAt).toLocaleString()}。完成 ${t.outcomes.completed}，失败 ${t.outcomes.failed}，未知 ${t.outcomes.unknown}，死信 ${t.deadLetters}。预留额度：${quota}`;
+ const recipient=$('recipient').value;const ids=new Set(t.nodes.map(n=>n.node_id));$('recipient').replaceChildren(...nodes.filter(n=>ids.has(n.id)).map(n=>option(n.id,n.id)));if(ids.has(recipient))$('recipient').value=recipient;
+ const filter=$('timelineNode').value;$('timelineNode').replaceChildren(option('','全部节点'),...nodes.filter(n=>ids.has(n.id)).map(n=>option(n.id,n.id)));if(ids.has(filter))$('timelineNode').value=filter;
+ const items=[...view.messages.messages.slice().reverse().map(m=>({...m,kind:'节点 → 节点'})),...view.messages.operatorMessages.slice().reverse().map(m=>({...m,kind:'用户 → 节点'})),...view.messages.userReplies.slice().reverse().map(m=>({...m,state:'replied',kind:'节点 → 用户'}))].filter(m=>!filter||m.sender===filter||m.recipient===filter).sort((a,b)=>a.createdAt.localeCompare(b.createdAt));
+ $('timeline').replaceChildren(...items.map(m=>{const el=document.createElement('article');el.className='message';const meta=document.createElement('small');meta.textContent=`${m.kind} · ${m.sender} → ${m.recipient} · ${labels[m.state]||m.state||'已持久化'} · ${new Date(m.createdAt).toLocaleTimeString()}`;const text=document.createElement('p');text.textContent=m.content;el.append(meta,text);return el;}));
+ if(!items.length)$('timeline').textContent='暂无消息。定向聊天需主动发送输入。';
+ }else{$('budget').textContent='';$('topicState').textContent='选择或创建话题后查看记录。';$('timeline').textContent='暂无选中话题。';$('timelineNode').replaceChildren(option('','全部节点'));$('metrics').textContent='';resetPages();pageButtons();}
+ }catch(error){if(version!==refreshVersion)return;$('connection').textContent='连接中断';throw error;}
+}
+async function perform(fn){if(busy)return;busy=true;let confirmed=false;document.querySelectorAll('button').forEach(b=>b.disabled=true);try{await fn();confirmed=true;await refresh();}catch(error){$('notice').textContent=error.rejected?'请求被拒绝：'+error.message+'。未追加输入，请检查话题状态和额度。':confirmed?'操作已确认，状态刷新失败：'+error.message+'。请刷新查询，不要重复发送。':'操作未确认：'+error.message+'。重试相同输入会沿用幂等键。';}finally{busy=false;document.querySelectorAll('button').forEach(b=>b.disabled=false);pageButtons();}}
+$('create').onsubmit=e=>{e.preventDefault();perform(async()=>{const turns=Number($('turns').value);const body={mode:$('mode').value,startNode:$('startNode').value,topic:{title:$('title').value,initialPrompt:$('prompt').value,participants:nodes.map(n=>n.id),maxModelTurns:turns,maxTurnsPerNode:Number($('perNode').value),durationMinutes:Number($('duration').value)},limits:{maxInputTokens:turns*32768,maxOutputTokens:turns*1024,maxEstimatedCost:turns*.25,inputTokensPerTurn:32768,outputTokensPerTurn:1024,estimatedCostPerTurn:.25,turnTimeoutMs:120000}};const [fingerprint,idempotencyKey]=await keyFor('start',body);const result=await api('start',{...body,idempotencyKey});pendingKeys.delete(fingerprint);saveKeys();selected=result.topicId;localStorage.setItem('dmn-topic',selected);$('notice').textContent='话题已持久化。';});};
+$('send').onsubmit=e=>{e.preventDefault();perform(async()=>{if(!selected)throw Error('请先选择话题');const body={topicId:selected,to:$('recipient').value,content:$('content').value};const [fingerprint,idempotencyKey]=await keyFor('send',body);await api('send',{...body,idempotencyKey});pendingKeys.delete(fingerprint);saveKeys();$('content').value='';resetPages();$('notice').textContent='输入已入队，尚不代表模型完成。';});};
+$('topics').onchange=()=>{selected=$('topics').value;localStorage.setItem('dmn-topic',selected);perform(async()=>{});};
+$('timelineNode').onchange=()=>perform(async()=>{});
+$('refresh').onclick=()=>perform(async()=>{resetPages();});
+$('older').onclick=()=>{if(nextCursor)perform(async()=>{pageBack.push(pageCursor);pageCursor=nextCursor;});};
+$('newer').onclick=()=>{if(pageBack.length)perform(async()=>{pageCursor=pageBack.pop();});};
+for(const button of document.querySelectorAll('[data-action]'))button.onclick=()=>perform(async()=>{if(!selected)throw Error('请先选择话题');await api(button.dataset.action,{topicId:selected});$('notice').textContent='操作已保存。';});
+selected=localStorage.getItem('dmn-topic')||'';
+refresh().catch(e=>$('notice').textContent=e.message);
+setInterval(()=>{if(!busy)refresh().catch(()=>{});},3000);

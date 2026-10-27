@@ -1,0 +1,29 @@
+# DMN 自定义配置示例；不是官方 DSH Profile/cordis.patch.yml 语法。
+# 实际 Provider/Model 必须在相应 SDK Runtime 中已注册。
+nodes:
+  - id: deepseek
+    provider: deepseek-official
+    model: REPLACE_WITH_AVAILABLE_DEEPSEEK_MODEL
+    sessionId: dmn-deepseek-primary
+    personaRef: templates/personas/deepseek-node.md
+    memoryNamespace: memory:deepseek
+    allowedTools:
+      - model_send_message
+      - model_list_peers
+      - model_get_thread
+      - model_decline_message
+  - id: gpt
+    provider: REPLACE_WITH_AVAILABLE_PROVIDER
+    model: REPLACE_WITH_AVAILABLE_GPT_MODEL
+    sessionId: dmn-gpt-primary
+    personaRef: templates/personas/gpt-node.md
+    memoryNamespace: memory:gpt
+    allowedTools:
+      - model_send_message
+      - model_list_peers
+      - model_get_thread
+      - model_decline_message
+
+# API 密钥存储在安全凭据机制或环境变量中，禁止写在本文件。
+# P0 推荐每节点独立 SDK Runtime。是否共享 DSH_HOME/存储须验证并规避并发所有权冲突。
+

@@ -1,0 +1,12 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>DMN · 独立模型消息网络</title><link rel="stylesheet" href="/style.css"><script src="/app.js" defer></script></head><body>
+<header><span class="brand">DMN</span><span>独立模型消息网络</span><span id="connection" role="status">正在连接</span></header>
+<main><section class="intro"><p class="eyebrow">双节点工作区</p><h1>各自思考，有界交流。</h1><p>选择一个节点直接交流，或明确开启节点间讨论。每次模型调用都受话题预算约束。</p></section>
+<div id="nodes" class="nodes"></div>
+<section class="panel"><h2>话题</h2><div class="row"><select id="topics" aria-label="已有话题"><option value="">选择话题</option></select><button id="refresh" type="button">刷新</button></div>
+<form id="create"><label>话题标题<input id="title" required maxlength="256" placeholder="例如：持久队列的恢复策略"></label><label>背景与初始问题<textarea id="prompt" required maxlength="8000"></textarea></label>
+<div class="row"><label>运行方式<select id="mode"><option value="direct">定向聊天 · 不启动节点讨论</option><option value="discussion">节点讨论 · 自动启动首个节点</option></select></label><label>首个节点<select id="startNode"></select></label></div>
+<div class="row"><label>总调用上限<input id="turns" type="number" min="1" max="12" value="6" required></label><label>每节点上限<input id="perNode" type="number" min="1" max="5" value="3" required></label><label>有效分钟<input id="duration" type="number" min="1" max="15" value="5" required></label></div>
+<p class="hint">每次预留 32768 输入 Token、1024 输出 Token、0.25 美元估算费用。失败尝试也消耗额度；估算不是账单硬上限。</p><button type="submit" class="primary">按上述额度创建话题</button></form></section>
+<section class="panel"><div class="row between"><h2>交流记录</h2><span id="budget"></span></div><div class="row"><button data-action="pause">暂停</button><button data-action="resume">恢复</button><button data-action="close">结束</button></div><p id="topicState" class="hint">选择或创建话题后查看记录。</p><label>查看节点<select id="timelineNode"><option value="">全部节点</option></select></label><div id="timeline" aria-live="polite"></div>
+<div class="row"><button id="newer" type="button">上一页 / 较新</button><span id="pageInfo" class="hint">最新记录</span><button id="older" type="button">下一页 / 较早</button></div><p id="metrics" class="hint"></p>
+<form id="send"><label>发送给<select id="recipient" required></select></label><label>消息<textarea id="content" required maxlength="8000" placeholder="输入仅投递给所选节点"></textarea></label><button type="submit" class="primary">发送</button></form></section><p id="notice" role="status"></p></main><footer>固定根会话 · 私有记忆隔离 · 人工授权预算</footer></body></html>

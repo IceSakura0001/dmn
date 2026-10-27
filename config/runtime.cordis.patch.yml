@@ -1,0 +1,25 @@
+# Verified against @deepseek-ai/dsh-sdk-minimal 0.2.1-rc.3.
+# No model-facing native tools. DMN structured suggestions are executed by the host.
+- { id: tool-fs, disabled: true }
+- { id: tool-working-directory, disabled: true }
+- { id: persistent-bash, disabled: true }
+- { id: persistent-pwsh, disabled: true }
+- { id: terminal-bash, disabled: true }
+- { id: terminal-pwsh, disabled: true }
+- { id: pty, disabled: true }
+- { id: subprocess, disabled: true }
+- { id: mcp-resources, disabled: true }
+- { id: compaction-basic, disabled: true }
+- { id: image-offload, disabled: true }
+- { id: llm-retry, disabled: true }
+- { id: plugin-package-inventory-deepseek, disabled: true }
+- id: llm-deepseek
+  config:
+    apiKeyEnv: DEEPSEEK_API_KEY
+    thinking: disabled
+    defaultContextWindow: 32768
+    maxTokens: 1024
+    retryPolicy: { mode: normal, maxRetries: 0 }
+    models:
+      - { id: deepseek-flash, contextWindow: 32768, maxTokens: 1024 }
+      - { id: deepseek-v4-pro, contextWindow: 32768, maxTokens: 1024 }
